@@ -38,14 +38,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("github ref: %s\n", ref)
-
-	u := uploader.NewUploader(uploader.WithToken(token))
-	err = u.Upload("asdf", workspace, dep)
+	branch, err := actionenv.ParseBranch(ref)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not upload branch '%s': %s\n", "adsf", err)
+		fmt.Fprintf(os.Stderr, "could not parse branch name: %s\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("uploaded to branch\n")
+	u := uploader.NewUploader(uploader.WithToken(token))
+	err = u.Upload(branch, workspace, dep)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could not upload branch '%s': %s\n", branch, err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Uploaded to branch '%s'\n", branch)
 }
