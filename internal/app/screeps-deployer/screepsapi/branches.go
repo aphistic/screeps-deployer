@@ -28,7 +28,7 @@ type Branch struct {
 }
 
 func (c *Client) Branches() ([]*Branch, error) {
-	reqURL := path.Join(c.baseURL(), "/api/user/branches")
+	reqURL := path.Join(c.baseURL(), "api/user/branches")
 
 	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
@@ -72,7 +72,7 @@ type cloneBranchRequest struct {
 }
 
 func (c *Client) CloneBranch(sourceBranch string, targetBranch string) error {
-	reqURL := path.Join(c.baseURL(), "/api/user/clone-branch")
+	reqURL := path.Join(c.baseURL(), "api/user/clone-branch")
 
 	reqBody := &cloneBranchRequest{
 		Branch:  sourceBranch,
