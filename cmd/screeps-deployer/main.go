@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/actionenv"
+	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/consts"
 	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/deploy"
 	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/screepsapi"
 	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/uploader"
@@ -43,6 +44,14 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "could not parse branch name: %s\n", err)
 		os.Exit(1)
+	}
+
+	if branch == "master" {
+		if defaultBranch, ok := env.LookupEnv("MASTER_BRANCH"); ok && defaultBranch != "" {
+			branch = defaultBranch
+ 		} else {
+ 			branch = consts.DefaultBranch
+		}
 	}
 
 	client := screepsapi.NewClient(screepsapi.WithToken(token))
