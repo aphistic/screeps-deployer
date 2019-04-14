@@ -71,7 +71,7 @@ func (u *Uploader) Upload(branch string, workspace string, dep *deploy.Deploymen
 		}
 	}
 
-var	modules []*screepsapi.Module
+	var modules []*screepsapi.Module
 	for _, module := range dep.Manifest.Modules {
 		modulePath := path.Join(workspace, module.File)
 		data, err := ioutil.ReadFile(modulePath)
@@ -83,10 +83,15 @@ var	modules []*screepsapi.Module
 		}
 
 		modules = append(modules, &screepsapi.Module{
-			Name: module.Name,
-			Data: data,
+			Name:   module.Name,
+			Data:   data,
 			Binary: module.Binary,
 		})
+	}
+
+	err = u.client.UploadBranch(branch, modules)
+	if err != nil {
+		return err
 	}
 
 	return nil
