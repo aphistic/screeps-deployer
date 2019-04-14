@@ -21,6 +21,5 @@ LABEL "repository"="https://github.com/aphistic/screeps-deployer"
 LABEL "homepage"="https://github.com/aphistic/screeps-deployer"
 LABEL "maintainer"="Erik Davidson <erik@erikd.org>"
 
-COPY --from=builder /project/cmd/screeps-deployer /screeps-deployer
-RUN chmod 755 /screeps-deployer
+COPY --from=builder /project/cmd/screeps-deployer/screeps-deployer /screeps-deployer
 ENTRYPOINT ["/screeps-deployer"]
