@@ -8,9 +8,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
+	"strings"
 	"time"
 
+	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/consts"
 	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/deploy"
+	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/screepsapi"
 )
 
 type uploadRequest struct {
@@ -33,11 +36,14 @@ func WithToken(token string) UploadOption {
 }
 
 type Uploader struct {
-	token string
+	client *screepsapi.Client
+	token  string
 }
 
 func NewUploader(opts ...UploadOption) *Uploader {
-	u := &Uploader{}
+	u := &Uploader{
+		client: screepsapi.NewClient(),
+	}
 
 	for _, opt := range opts {
 		opt(u)
@@ -47,6 +53,30 @@ func NewUploader(opts ...UploadOption) *Uploader {
 }
 
 func (u *Uploader) Upload(branch string, workspace string, dep *deploy.Deployment) error {
+	lowerBranch := strings.ToLower(branch)
+
+	// Get a list of the existing branches so we know if we need to clone a new one or not
+	branches, err := u.client.Branches()
+	if err != nil {
+		return err
+	}
+
+	hasBranch := false
+	for _, branch := range branches {
+		if lowerBranch == strings.ToLower(branch.Name) {
+			hasBranch = true
+			break
+		}
+	}
+
+	if !hasBranch {
+		// We don't have the branch yet, we need to clone it
+		err = u.client.CloneBranch(consts.DefaultBranch, branch)
+		if err != nil {
+			return fmt.Errorf("could not clone branch for upload: %s", err)
+		}
+	}
+
 	reqBody := &uploadRequest{
 		Hash:    time.Now().UnixNano(),
 		Branch:  branch,
