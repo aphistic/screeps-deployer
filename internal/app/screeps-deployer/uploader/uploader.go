@@ -1,15 +1,10 @@
 package uploader
 
 import (
-	"bytes"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/consts"
 	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/deploy"
@@ -29,15 +24,14 @@ type uploadResponse struct {
 
 type UploadOption func(*Uploader)
 
-func WithToken(token string) UploadOption {
+func WithClient(client *screepsapi.Client) UploadOption {
 	return func(u *Uploader) {
-		u.token = token
+		u.client = client
 	}
 }
 
 type Uploader struct {
 	client *screepsapi.Client
-	token  string
 }
 
 func NewUploader(opts ...UploadOption) *Uploader {
@@ -77,12 +71,7 @@ func (u *Uploader) Upload(branch string, workspace string, dep *deploy.Deploymen
 		}
 	}
 
-	reqBody := &uploadRequest{
-		Hash:    time.Now().UnixNano(),
-		Branch:  branch,
-		Modules: map[string]interface{}{},
-	}
-
+var	modules []*screepsapi.Module
 	for _, module := range dep.Manifest.Modules {
 		modulePath := path.Join(workspace, module.File)
 		data, err := ioutil.ReadFile(modulePath)
@@ -93,51 +82,11 @@ func (u *Uploader) Upload(branch string, workspace string, dep *deploy.Deploymen
 			)
 		}
 
-		if module.Binary {
-			reqBody.Modules[module.Name] = map[string]string{
-				"binary": base64.StdEncoding.EncodeToString(data),
-			}
-		} else {
-			reqBody.Modules[module.Name] = string(data)
-		}
-	}
-
-	bodyData, err := json.Marshal(reqBody)
-	if err != nil {
-		return err
-	}
-
-	buf := bytes.NewBuffer(bodyData)
-	req, err := http.NewRequest(http.MethodPost, "https://screeps.com/api/user/code", buf)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("X-Token", u.token)
-	req.Header.Set("X-Username", u.token)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	resBody, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		fmt.Printf("couldn't read body: %s\n", err)
-		return err
-	}
-
-	resData := &uploadResponse{}
-	err = json.Unmarshal(resBody, &resData)
-	if err != nil {
-		return fmt.Errorf("response unmarshal error: %s", err)
-	}
-
-	if resData.OK != 1 {
-		return fmt.Errorf("upload error: %s", resData.Error)
+		modules = append(modules, &screepsapi.Module{
+			Name: module.Name,
+			Data: data,
+			Binary: module.Binary,
+		})
 	}
 
 	return nil

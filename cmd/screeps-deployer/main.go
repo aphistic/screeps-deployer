@@ -7,6 +7,7 @@ import (
 
 	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/actionenv"
 	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/deploy"
+	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/screepsapi"
 	"github.com/aphistic/screeps-deployer/internal/app/screeps-deployer/uploader"
 )
 
@@ -44,7 +45,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	u := uploader.NewUploader(uploader.WithToken(token))
+	client := screepsapi.NewClient(screepsapi.WithToken(token))
+	u := uploader.NewUploader(uploader.WithClient(client))
 	err = u.Upload(branch, workspace, dep)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not upload branch '%s': %s\n", branch, err)

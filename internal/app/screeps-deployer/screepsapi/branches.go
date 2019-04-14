@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"path"
 )
 
 type branchesResponse struct {
@@ -28,12 +27,17 @@ type Branch struct {
 }
 
 func (c *Client) Branches() ([]*Branch, error) {
-	reqURL := path.Join(c.baseURL(), "api/user/branches")
+	reqURL := c.baseURL() + "api/user/branches"
 
+	fmt.Printf("req url: %s\n", reqURL)
 	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Set("X-Token", c.token)
+	req.Header.Set("X-Username", c.token)
+	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.client.Do(req)
 	if err != nil {
@@ -53,6 +57,7 @@ func (c *Client) Branches() ([]*Branch, error) {
 	}
 
 	if branchRes.OK != 1 {
+		fmt.Printf("body: %s\n", resBody)
 		return nil, fmt.Errorf("could not get branches")
 	}
 
@@ -72,7 +77,7 @@ type cloneBranchRequest struct {
 }
 
 func (c *Client) CloneBranch(sourceBranch string, targetBranch string) error {
-	reqURL := path.Join(c.baseURL(), "api/user/clone-branch")
+	reqURL := c.baseURL() + "api/user/clone-branch"
 
 	reqBody := &cloneBranchRequest{
 		Branch:  sourceBranch,
@@ -89,6 +94,10 @@ func (c *Client) CloneBranch(sourceBranch string, targetBranch string) error {
 	if err != nil {
 		return err
 	}
+
+	req.Header.Set("X-Token", c.token)
+	req.Header.Set("X-Username", c.token)
+	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.client.Do(req)
 	if err != nil {
